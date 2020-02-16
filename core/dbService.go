@@ -24,14 +24,12 @@ func newDBService(dbFilePath string) (*dbService, error) {
 }
 
 func (db dbService) putFileFragmentContent(fragmentID string, fileFragment *FileFragment) error {
-
 	glg.Debugf("[DBService] Putting file fragment %s of %s", fragmentID, fileFragment.GetFileName())
 	return db.conn.Put(
 		[]byte(fragmentID),
 		fileFragment.GetFragmentContent(),
 		nil,
 	)
-
 }
 
 func (db dbService) getFileFragmentContent(fragmentID string) ([]byte, error) {
