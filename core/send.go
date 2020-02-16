@@ -58,7 +58,7 @@ func sendFile(fp string, fragmentSize int, client DroneClient, wg *sync.WaitGrou
 	var offset int64 = 0
 	var fragmentID int = 0
 	var totalFragments int32 = int32(math.Ceil(float64(fileSize) / float64(fragmentSize)))
-	// var bar = uiprogress.AddBar(int(totalFragments)).AppendCompleted().PrependElapsed()
+	var bar = uiprogress.AddBar(int(totalFragments)).AppendCompleted().PrependElapsed()
 
 	for offset < fileSize {
 		_, err := file.Seek(offset, 0)
@@ -84,7 +84,7 @@ func sendFile(fp string, fragmentSize int, client DroneClient, wg *sync.WaitGrou
 		offset += int64(fragmentSize)
 		fragmentID++
 		fileContentBuffer = make([]byte, fragmentSize)
-		// bar.Incr()
+		bar.Incr()
 	}
 
 	reply, err := stream.CloseAndRecv()
