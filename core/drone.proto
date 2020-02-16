@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package core;
+
+service Drone {
+  rpc ReceiveFile(stream FileFragment) returns (Status);
+}
+
+message Status {
+  string message = 1;
+  int32 statusCode = 2;
+}
+
+message FileFragment {
+  string fileName = 1;
+  int32 fragmentId = 2;
+  bytes fragmentContent = 3;
+  int32 totalFragments = 4;
+}
