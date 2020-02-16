@@ -10,7 +10,7 @@ type dbService struct {
 	conn *leveldb.DB
 }
 
-//b=newDBService create a new db service
+//newDBService create a new db service
 func newDBService(dbFilePath string) (*dbService, error) {
 	db, err := leveldb.OpenFile(dbFilePath, nil)
 
