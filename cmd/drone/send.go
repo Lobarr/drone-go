@@ -6,19 +6,19 @@ import (
 )
 
 // flags
-var host string
+var server string
 var fragmentSize int
 
 var sendCmd = &cobra.Command{
 	Use:   "send",
-	Short: "Used to communicate with drone servers",
+	Short: "Sends input files to specified server",
 	Args:  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return core.SendFiles(args, host, fragmentSize)
+		return core.SendFiles(args, server, fragmentSize)
 	},
 }
 
 func init() {
-	sendCmd.Flags().StringVarP(&host, "host", "", "0.0.0.0:9999", "Receipient drone server address")
+	sendCmd.Flags().StringVarP(&server, "server", "", "0.0.0.0:9999", "Receipient drone server address")
 	sendCmd.Flags().IntVarP(&fragmentSize, "fragmentSize", "", 2000, "Size of each fragment of a file in bytes")
 }
