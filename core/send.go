@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -15,15 +14,17 @@ import (
 	"google.golang.org/grpc"
 )
 
+var droneClientLogTemplate = "[DroneClient] %s"
+
 //SendFiles sends requested files to recipient
 func SendFiles(filePaths []string, recipient string, fragmentSize int) error {
 	if !checkFiles(filePaths) {
-		return errors.New("[DroneClient] Input files must exist")
+		return errors.New("Input files must exist")
 	}
 
 	conn, err := grpc.Dial(recipient, grpc.WithInsecure())
 	if err != nil {
-		return fmt.Errorf("[DroneClient] %s", err.Error())
+		return err
 	}
 	defer conn.Close()
 
@@ -31,6 +32,7 @@ func SendFiles(filePaths []string, recipient string, fragmentSize int) error {
 	wg := sync.WaitGroup{}
 
 	uiprogress.Start()
+
 	for _, filePath := range filePaths {
 		wg.Add(1)
 		go sendFile(filePath, fragmentSize, client, &wg)
@@ -47,12 +49,12 @@ func sendFile(fp string, fragmentSize int, client DroneClient, wg *sync.WaitGrou
 
 	stream, err := client.ReceiveFile(context.Background())
 	if err != nil {
-		glg.Errorf("[DroneClient] %s", err.Error())
+		glg.Errorf(droneServerLogTemplate, err.Error())
 	}
 
 	file, err := os.Open(fp)
 	if err != nil {
-		glg.Errorf("[DroneClient] %s", err.Error())
+		glg.Errorf(droneServerLogTemplate, err.Error())
 	}
 
 	var offset int64 = 0
@@ -61,14 +63,9 @@ func sendFile(fp string, fragmentSize int, client DroneClient, wg *sync.WaitGrou
 	var bar = uiprogress.AddBar(int(totalFragments)).AppendCompleted().PrependElapsed()
 
 	for offset < fileSize {
-		_, err := file.Seek(offset, 0)
+		err = getFileFragmentByID(file, fragmentID, fileContentBuffer)
 		if err != nil {
-			glg.Errorf("[DroneClient] %s", err.Error())
-		}
-
-		_, err = file.Read(fileContentBuffer)
-		if err != nil {
-			glg.Errorf("[DroneClient] %s", err.Error())
+			glg.Errorf(droneServerLogTemplate, err.Error())
 		}
 
 		err = stream.Send(&FileFragment{
@@ -78,7 +75,7 @@ func sendFile(fp string, fragmentSize int, client DroneClient, wg *sync.WaitGrou
 			TotalFragments:  totalFragments,
 		})
 		if err != nil {
-			glg.Errorf("[DroneClient] %s", err.Error())
+			glg.Errorf(droneServerLogTemplate, err.Error())
 		}
 
 		offset += int64(fragmentSize)
@@ -89,10 +86,25 @@ func sendFile(fp string, fragmentSize int, client DroneClient, wg *sync.WaitGrou
 
 	reply, err := stream.CloseAndRecv()
 	if err != nil || reply.GetStatusCode() != 200 {
-		glg.Errorf("[DroneClient] %s", err.Error())
+		glg.Errorf(droneServerLogTemplate, err.Error())
 	}
 
 	wg.Done()
+}
+
+func getFileFragmentByID(file *os.File, fragmentID int, fileContent []byte) error {
+	fragmentSize := len(fileContent)
+	offset := int64(fragmentID * fragmentSize)
+
+	if _, err := file.Seek(offset, 0); err != nil {
+		return err
+	}
+
+	if _, err := file.Read(fileContent); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func checkFiles(files []string) bool {

@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path"
 	"sync"
@@ -9,6 +10,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/kpango/glg"
 )
+
+var fileControllerLogTemplate = "[FileController] %s"
 
 // coordinates receiving and sending files
 type fileController struct {
@@ -26,7 +29,8 @@ func (fc *fileController) putFileFragment(ctx context.Context, fileFragment *Fil
 	done := make(chan struct{}, 1)
 
 	go func() {
-		glg.Debugf("[FileController] Putting fileFragment %d of %s", fileFragment.GetFragmentId(), fileFragment.GetFileName())
+		glg.Debugf(fileControllerLogTemplate, fmt.Sprintf("Putting fileFragment %d of %s", fileFragment.GetFragmentId(), fileFragment.GetFileName()))
+
 		fc.mutex.Lock()
 		defer fc.mutex.Unlock()
 
@@ -63,15 +67,15 @@ func (fc *fileController) putFileFragment(ctx context.Context, fileFragment *Fil
 }
 
 func (fc *fileController) createFileContainer(fileFragment *FileFragment) {
-	glg.Debugf("[FileController] Initializing receipt of %s", fileFragment.GetFileName())
+	glg.Debugf(fileControllerLogTemplate, fmt.Sprintf("Initializing receipt of %s", fileFragment.GetFileName()))
 	fc.filesMap[fileFragment.GetFileName()] = newFileContainer(fileFragment.GetFileName(), int(fileFragment.GetTotalFragments()))
 }
 
 func (fc *fileController) assembleFile(fileName string) {
-	glg.Debugf("[FileController] Assembing file %s", fileName)
+	glg.Debugf(fileControllerLogTemplate, fmt.Sprintf("Assembing file %s", fileName))
 
 	if !fc.inMap(fileName) {
-		glg.Error("[FileController] Unable to assemble invalid file")
+		glg.Errorf(fileControllerLogTemplate, "Unable to assemble invalid file")
 		return
 	}
 
@@ -79,25 +83,25 @@ func (fc *fileController) assembleFile(fileName string) {
 	if !fileExists(getDroneDownloadsPath()) {
 		err := fc.createDownloadsFolder()
 		if err != nil {
-			glg.Fatalf("[Filecontroller] %s", err.Error())
+			glg.Fatalf(fileControllerLogTemplate, err.Error())
 			return
 		}
 	}
 
 	file, err := os.Create(path.Join(getDroneDownloadsPath(), fileName))
 	if err != nil {
-		glg.Error("[FileController] Unable to create file", err)
+		glg.Errorf(fileControllerLogTemplate, fmt.Sprintf("Unable to create file due to %s", err.Error()))
 		return
 	}
 
 	for _, fragmenID := range fileContainer.fragmentIDs {
 		fileFragmentContent, err := fc.db.getFileFragmentContent(fragmenID)
 		if err != nil {
-			glg.Error("[FileController] Unable to get file fragment")
+			glg.Errorf(fileControllerLogTemplate, "Unable to get file fragment")
 		} else {
 			_, err := file.Write(fileFragmentContent)
 			if err != nil {
-				glg.Error("[FileController] Unable to write file fragment to file")
+				glg.Errorf(fileControllerLogTemplate, "Unable to write file fragment to file")
 			}
 		}
 	}
