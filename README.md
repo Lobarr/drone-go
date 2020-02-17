@@ -6,7 +6,7 @@ Drone is a simple cli file tranfer utility that is able to concurrently send mul
 
 - Go
 
-### Setup Instructions
+## Setup Instructions
 
 - Clone the repo by running the following command
 
@@ -25,5 +25,9 @@ Drone is a simple cli file tranfer utility that is able to concurrently send mul
   ```shell
   make build
   ```
-
+  
 If you've made it here, you're all set!
+
+## Demo
+
+![demo](assets/demo.gif)
