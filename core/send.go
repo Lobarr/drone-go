@@ -57,9 +57,9 @@ func sendFile(fp string, fragmentSize int, client DroneClient, wg *sync.WaitGrou
 		glg.Errorf(droneServerLogTemplate, err.Error())
 	}
 
-	var offset int64 = 0
-	var fragmentID int = 0
-	var totalFragments int32 = int32(math.Ceil(float64(fileSize) / float64(fragmentSize)))
+	var offset int64
+	var fragmentID int
+	var totalFragments = int32(math.Ceil(float64(fileSize) / float64(fragmentSize)))
 	var bar = uiprogress.AddBar(int(totalFragments)).AppendCompleted().PrependElapsed()
 
 	for offset < fileSize {

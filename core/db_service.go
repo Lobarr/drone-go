@@ -5,13 +5,21 @@ import (
 
 	"github.com/kpango/glg"
 	"github.com/syndtr/goleveldb/leveldb"
+	"github.com/syndtr/goleveldb/leveldb/opt"
 )
 
 var dbServiceLogTemplate = "[DBService] %s"
 
-//DBService interacts with db
+type dbConnection interface {
+	Put(key, value []byte, wo *opt.WriteOptions) error
+	Get(key []byte, ro *opt.ReadOptions) (value []byte, err error)
+	Delete(key []byte, wo *opt.WriteOptions) error
+	Close() error
+}
+
+//dBService interacts with db
 type dbService struct {
-	conn *leveldb.DB
+	conn dbConnection
 }
 
 //newDBService create a new db service
