@@ -18,7 +18,7 @@ func NewDroneService(dbFilePath string) (*DroneService, error) {
 	}
 	return &DroneService{
 		fc: &fileController{
-			filesMap: make(map[string]*fileContainer),
+			filesMap: make(map[string]fileContainerInterface),
 			mutex:    &sync.Mutex{},
 			db:       dbService,
 		},
@@ -27,7 +27,7 @@ func NewDroneService(dbFilePath string) (*DroneService, error) {
 
 //CloseDB closes level db conn
 func (droneService *DroneService) CloseDB() {
-	droneService.fc.db.conn.Close()
+	droneService.fc.db.close()
 }
 
 //ReceiveFile receives incoming files
@@ -43,6 +43,6 @@ func (droneService *DroneService) ReceiveFile(stream Drone_ReceiveFileServer) er
 			return err
 		}
 
-		droneService.fc.putFileFragment(stream.Context(), fileFragment)
+		droneService.fc.addFileFragment(stream.Context(), fileFragment)
 	}
 }

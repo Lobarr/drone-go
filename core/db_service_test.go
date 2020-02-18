@@ -32,47 +32,37 @@ func (mock *dbConnectionMock) Close() error {
 	return args.Error(0)
 }
 
-func TestPutFileFragmentContent(t *testing.T) {
-	mockFragmentID := "some-id"
-	mockFileFragment := new(FileFragment)
-	mockDbConn := new(dbConnectionMock)
-	testDbService := dbService{
-		conn: mockDbConn,
-	}
-
-	mockDbConn.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-	assert.NoError(t, testDbService.putFileFragmentContent(mockFragmentID, mockFileFragment))
-	mockDbConn.AssertCalled(t, "Put", []byte(mockFragmentID), mock.Anything, mock.Anything)
-}
-
-func TestGetFileFragmentContent(t *testing.T) {
-	mockFragmentID := "some-id"
-	mockDbConn := new(dbConnectionMock)
-	expectedFragmentContent := []byte{}
-	testDbService := dbService{
-		conn: mockDbConn,
-	}
-
-	mockDbConn.On("Get", mock.Anything, mock.Anything).Return(expectedFragmentContent, nil)
-
-	fragmentContent, err := testDbService.getFileFragmentContent(mockFragmentID)
-
-	assert.NoError(t, err)
-	assert.Equal(t, expectedFragmentContent, fragmentContent)
-	mockDbConn.AssertCalled(t, "Get", []byte(mockFragmentID), mock.Anything)
-}
-
-func TestRemoveFileFragments(t *testing.T) {
+func TestDBService(t *testing.T) {
 	mockFragmentID := "some-id"
 	mockDbConn := new(dbConnectionMock)
 	testDbService := dbService{
 		conn: mockDbConn,
 	}
 
-	mockDbConn.On("Delete", mock.Anything, mock.Anything).Return(nil)
+	t.Run("should put file fragment content in db", func(t *testing.T) {
+		mockFileFragment := new(FileFragment)
 
-	errs := testDbService.removeFileFragments(mockFragmentID)
-	assert.Empty(t, errs)
-	mockDbConn.AssertCalled(t, "Delete", []byte(mockFragmentID), mock.Anything)
+		mockDbConn.On("Put", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+		assert.NoError(t, testDbService.putFileFragmentContent(mockFragmentID, mockFileFragment))
+		mockDbConn.AssertCalled(t, "Put", []byte(mockFragmentID), mock.Anything, mock.Anything)
+	})
+
+	t.Run("should get file fragment content from db", func(t *testing.T) {
+		expectedFragmentContent := []byte{}
+
+		mockDbConn.On("Get", mock.Anything, mock.Anything).Return(expectedFragmentContent, nil)
+		fragmentContent, err := testDbService.getFileFragmentContent(mockFragmentID)
+
+		assert.NoError(t, err)
+		assert.Equal(t, expectedFragmentContent, fragmentContent)
+		mockDbConn.AssertCalled(t, "Get", []byte(mockFragmentID), mock.Anything)
+	})
+
+	t.Run("should remove file fragments from db", func(t *testing.T) {
+		mockDbConn.On("Delete", mock.Anything, mock.Anything).Return(nil)
+
+		errs := testDbService.removeFileFragments(mockFragmentID)
+		assert.Empty(t, errs)
+		mockDbConn.AssertCalled(t, "Delete", []byte(mockFragmentID), mock.Anything)
+	})
 }

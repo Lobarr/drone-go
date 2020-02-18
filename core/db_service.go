@@ -11,15 +11,22 @@ import (
 var dbServiceLogTemplate = "[DBService] %s"
 
 type dbConnection interface {
-	Put(key, value []byte, wo *opt.WriteOptions) error
-	Get(key []byte, ro *opt.ReadOptions) (value []byte, err error)
-	Delete(key []byte, wo *opt.WriteOptions) error
+	Put([]byte, []byte, *opt.WriteOptions) error
+	Get([]byte, *opt.ReadOptions) ([]byte, error)
+	Delete([]byte, *opt.WriteOptions) error
 	Close() error
 }
 
 //dBService interacts with db
 type dbService struct {
 	conn dbConnection
+}
+
+type dbServiceInteface interface {
+	putFileFragmentContent(string, *FileFragment) error
+	getFileFragmentContent(string) ([]byte, error)
+	removeFileFragments(...string) []error
+	close()
 }
 
 //newDBService create a new db service
@@ -58,4 +65,8 @@ func (db dbService) removeFileFragments(fragmentIDs ...string) []error {
 		}
 	}
 	return errs
+}
+
+func (db dbService) close() {
+	db.conn.Close()
 }

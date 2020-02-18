@@ -15,16 +15,16 @@ var fileControllerLogTemplate = "[FileController] %s"
 
 // coordinates receiving and sending files
 type fileController struct {
-	filesMap map[string]*fileContainer
+	filesMap map[string]fileContainerInterface
 	mutex    *sync.Mutex
-	db       *dbService
+	db       dbServiceInteface
 }
 
 func (fc fileController) createDownloadsFolder() error {
 	return os.Mkdir(getDroneDownloadsPath(), os.FileMode(0755))
 }
 
-func (fc *fileController) putFileFragment(ctx context.Context, fileFragment *FileFragment) error {
+func (fc *fileController) addFileFragment(ctx context.Context, fileFragment *FileFragment) error {
 	var err error
 	done := make(chan struct{}, 1)
 
@@ -46,7 +46,7 @@ func (fc *fileController) putFileFragment(ctx context.Context, fileFragment *Fil
 			fileContainer.addFragment(fragmentID)
 			if fileContainer.isComplete() {
 				go func() {
-					fc.assembleFile(fileContainer.fileName)
+					fc.assembleFile(fileContainer.getFileName())
 				}()
 			}
 		}
@@ -94,7 +94,7 @@ func (fc *fileController) assembleFile(fileName string) {
 		return
 	}
 
-	for _, fragmenID := range fileContainer.fragmentIDs {
+	for _, fragmenID := range fileContainer.getFragmentIDs() {
 		fileFragmentContent, err := fc.db.getFileFragmentContent(fragmenID)
 		if err != nil {
 			glg.Errorf(fileControllerLogTemplate, "Unable to get file fragment")
@@ -107,7 +107,7 @@ func (fc *fileController) assembleFile(fileName string) {
 	}
 
 	file.Close()
-	fc.db.removeFileFragments(fileContainer.fragmentIDs...)
+	fc.db.removeFileFragments(fileContainer.getFragmentIDs()...)
 	delete(fc.filesMap, fileName)
 }
 
