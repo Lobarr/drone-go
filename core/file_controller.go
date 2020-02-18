@@ -57,11 +57,9 @@ func (fc *fileController) addFileFragment(ctx context.Context, fileFragment *Fil
 	select {
 	case <-done:
 		if err != nil {
-			glg.Error(err.Error())
 			return err
 		}
 	case <-ctx.Done():
-		glg.Error(ctx.Err())
 	}
 	return nil
 }
@@ -93,6 +91,7 @@ func (fc *fileController) assembleFile(fileName string) {
 		glg.Errorf(fileControllerLogTemplate, fmt.Sprintf("Unable to create file due to %s", err.Error()))
 		return
 	}
+	defer file.Close()
 
 	for _, fragmenID := range fileContainer.getFragmentIDs() {
 		fileFragmentContent, err := fc.db.getFileFragmentContent(fragmenID)
@@ -106,7 +105,6 @@ func (fc *fileController) assembleFile(fileName string) {
 		}
 	}
 
-	file.Close()
 	fc.db.removeFileFragments(fileContainer.getFragmentIDs()...)
 	delete(fc.filesMap, fileName)
 }

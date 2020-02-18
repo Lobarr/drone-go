@@ -20,5 +20,5 @@ var sendCmd = &cobra.Command{
 
 func init() {
 	sendCmd.Flags().StringVarP(&server, "server", "", "0.0.0.0:9999", "Receipient drone server address")
-	sendCmd.Flags().IntVarP(&fragmentSize, "fragmentSize", "", 2000, "Size of each fragment of a file in bytes")
+	sendCmd.Flags().IntVarP(&fragmentSize, "fragmentSize", "", core.DefaultFragmentSize, "Size of each fragment of a file in bytes")
 }

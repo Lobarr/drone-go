@@ -4,6 +4,9 @@ import (
 	"os"
 )
 
+//DefaultFragmentSize default fragment size used in drone
+const DefaultFragmentSize int = 1000000 // aprox 1mb
+
 //fileExists checks if a file exists
 func fileExists(filePath string) bool {
 	if _, err := os.Stat(filePath); os.IsNotExist(err) {

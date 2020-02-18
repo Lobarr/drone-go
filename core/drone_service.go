@@ -1,8 +1,11 @@
 package core
 
 import (
+	"context"
 	"io"
 	"sync"
+
+	"github.com/uw-labs/sync/rungroup"
 )
 
 //DroneService implements the drone grpc service
@@ -32,17 +35,26 @@ func (droneService *DroneService) CloseDB() {
 
 //ReceiveFile receives incoming files
 func (droneService *DroneService) ReceiveFile(stream Drone_ReceiveFileServer) error {
+	runGroup, ctx := rungroup.New(context.Background())
+
 	for {
 		fileFragment, err := stream.Recv()
 		if err == io.EOF {
-			return stream.SendAndClose(&Status{
-				StatusCode: 200,
-				Message:    "OK",
-			})
+			break
 		} else if err != nil {
 			return err
 		}
-
-		droneService.fc.addFileFragment(stream.Context(), fileFragment)
+		runGroup.Go(func() error {
+			return droneService.fc.addFileFragment(ctx, fileFragment)
+		})
 	}
+
+	if err := runGroup.Wait(); err != nil {
+		return err
+	}
+
+	return stream.SendAndClose(&Status{
+		StatusCode: 200,
+		Message:    "OK",
+	})
 }
