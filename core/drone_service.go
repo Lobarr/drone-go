@@ -1,11 +1,11 @@
 package core
 
 import (
-	"context"
+	"errors"
 	"io"
 	"sync"
 
-	"github.com/uw-labs/sync/rungroup"
+	"github.com/panjf2000/ants/v2"
 )
 
 //DroneService implements the drone grpc service
@@ -35,26 +35,42 @@ func (droneService *DroneService) CloseDB() {
 
 //ReceiveFile receives incoming files
 func (droneService *DroneService) ReceiveFile(stream Drone_ReceiveFileServer) error {
-	runGroup, ctx := rungroup.New(context.Background())
+	errChan := make(chan error, 1)
+	doneChan := make(chan struct{}, 1)
+	pool, err := ants.NewPool(50)
 
-	for {
-		fileFragment, err := stream.Recv()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-		runGroup.Go(func() error {
-			return droneService.fc.addFileFragment(ctx, fileFragment)
-		})
+	if err != nil {
+		return errors.New("Unable to create worker pool")
 	}
 
-	if err := runGroup.Wait(); err != nil {
+	go func() {
+		for {
+			fileFragment, err := stream.Recv()
+			if err == io.EOF {
+				doneChan <- struct{}{}
+				break
+			} else if err != nil {
+				errChan <- err
+			}
+
+			pool.Submit(func() {
+				err := droneService.fc.addFileFragment(stream.Context(), fileFragment)
+				if err != nil {
+					errChan <- err
+				}
+			})
+		}
+	}()
+
+	select {
+	case <-doneChan:
+		pool.Release()
+		return stream.SendAndClose(&Status{
+			StatusCode: 200,
+			Message:    "OK",
+		})
+	case err = <-errChan:
+		pool.Release()
 		return err
 	}
-
-	return stream.SendAndClose(&Status{
-		StatusCode: 200,
-		Message:    "OK",
-	})
 }
