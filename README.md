@@ -17,7 +17,7 @@ Drone is a simple cli file tranfer utility that is able to concurrently send mul
 - Install dependencies
 
   ```shell
-  go mod tidy
+  go get -v -t -d ./...
   ```
 
 - Build executable
