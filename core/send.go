@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/google/uuid"
 	"github.com/gosuri/uiprogress"
 	"github.com/kpango/glg"
 	"golang.org/x/sync/errgroup"
@@ -41,7 +42,7 @@ func SendFiles(filePaths []string, recipient string, fragmentSize int) error {
 	}
 
 	if err = workerGroup.Wait(); err != nil {
-		return glg.Errorf(droneServerLogTemplate, err.Error())
+		return glg.Get().Errorf(droneServerLogTemplate, err.Error())
 	}
 	return nil
 }
@@ -65,10 +66,13 @@ func sendFile(fp string, fragmentSize int, client DroneClient) error {
 	}
 	defer file.Close()
 
-	var offset int64
-	var fragmentID int
-	var totalFragments = int32(math.Ceil(float64(fileSize) / float64(fragmentSize)))
-	var bar = uiprogress.AddBar(int(totalFragments)).AppendCompleted().PrependElapsed()
+	var (
+		offset         int64
+		fragmentID     int
+		totalFragments = int32(math.Ceil(float64(fileSize) / float64(fragmentSize)))
+		transactionID  = uuid.New().String()
+		bar            = uiprogress.AddBar(int(totalFragments)).AppendCompleted().PrependElapsed()
+	)
 
 	for offset < fileSize {
 		err = getFileFragmentByID(file, fragmentID, fileContentBuffer)
@@ -78,9 +82,10 @@ func sendFile(fp string, fragmentSize int, client DroneClient) error {
 
 		err = stream.Send(&FileFragment{
 			FileName:        fileName,
-			FragmentId:      int32(fragmentID),
+			FragmentID:      int32(fragmentID),
 			FragmentContent: sanitizeBytes(fileContentBuffer),
 			TotalFragments:  totalFragments,
+			TransactionID:   transactionID,
 		})
 		if err != nil {
 			return makeErr(err)

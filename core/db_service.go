@@ -25,7 +25,7 @@ type dbService struct {
 type dbServiceInteface interface {
 	putFileFragmentContent(string, *FileFragment) error
 	getFileFragmentContent(string) ([]byte, error)
-	removeFileFragments(...string) []error
+	removeFileFragments(fileContainerInterface) []error
 	close()
 }
 
@@ -43,24 +43,27 @@ func newDBService(dbFilePath string) (*dbService, error) {
 }
 
 func (db dbService) putFileFragmentContent(fragmentID string, fileFragment *FileFragment) error {
-	glg.Debugf(dbServiceLogTemplate, fmt.Sprintf("Putting file fragment %s of %s", fragmentID, fileFragment.GetFileName()))
+	glg.Get().Debugf(dbServiceLogTemplate, fmt.Sprintf("Putting file fragment %s of %s", fragmentID, fileFragment.GetFileName()))
+	fragmentKey := []byte(fragmentID)
 	return db.conn.Put(
-		[]byte(fragmentID),
+		fragmentKey,
 		fileFragment.GetFragmentContent(),
 		nil,
 	)
 }
 
 func (db dbService) getFileFragmentContent(fragmentID string) ([]byte, error) {
-	glg.Debugf(dbServiceLogTemplate, fmt.Sprintf("Getting file fragment %s", fragmentID))
-	return db.conn.Get([]byte(fragmentID), nil)
+	glg.Get().Debugf(dbServiceLogTemplate, fmt.Sprintf("Getting file fragment %s", fragmentID))
+	fragmentKey := []byte(fragmentID)
+	return db.conn.Get(fragmentKey, nil)
 }
 
-func (db dbService) removeFileFragments(fragmentIDs ...string) []error {
-	glg.Debugf(dbServiceLogTemplate, fmt.Sprintf("Removing %d file fragments", len(fragmentIDs)))
+func (db dbService) removeFileFragments(fileContainer fileContainerInterface) []error {
+	glg.Get().Debugf(dbServiceLogTemplate, fmt.Sprintf("Removing %d file fragments", fileContainer.getTotalFragments()))
 	errs := []error{}
-	for _, fragmentID := range fragmentIDs {
-		if err := db.conn.Delete([]byte(fragmentID), nil); err != nil {
+	for fragmentID := 0; fragmentID < fileContainer.getTotalFragments(); fragmentID++ {
+		fragmentKey := []byte(fileContainer.generateKey(int32(fragmentID)))
+		if err := db.conn.Delete(fragmentKey, nil); err != nil {
 			errs = append(errs, err)
 		}
 	}

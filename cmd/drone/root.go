@@ -18,6 +18,6 @@ func init() {
 //Execute entry point to drone cli app
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		glg.Fatalf("[DroneCmd] %s", err.Error())
+		glg.Get().Fatalf("[DroneCmd] %s", err.Error())
 	}
 }

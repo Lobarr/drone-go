@@ -59,10 +59,16 @@ func TestDBService(t *testing.T) {
 	})
 
 	t.Run("should remove file fragments from db", func(t *testing.T) {
+		mockFileContainer := &fileContainer{
+			fileName:               "some-name",
+			transactionID:          "some-transaction-id",
+			receivedFragmentsCount: 1,
+			totalFragments:         1,
+		}
 		mockDbConn.On("Delete", mock.Anything, mock.Anything).Return(nil)
 
-		errs := testDbService.removeFileFragments(mockFragmentID)
+		errs := testDbService.removeFileFragments(mockFileContainer)
 		assert.Empty(t, errs)
-		mockDbConn.AssertCalled(t, "Delete", []byte(mockFragmentID), mock.Anything)
+		mockDbConn.AssertCalled(t, "Delete", mock.Anything, mock.Anything)
 	})
 }

@@ -25,8 +25,8 @@ func (mock *dbServiceMock) getFileFragmentContent(fragmentID string) ([]byte, er
 	return args.Get(0).([]byte), args.Error(1)
 }
 
-func (mock *dbServiceMock) removeFileFragments(fragmentIDs ...string) []error {
-	args := mock.Called(fragmentIDs)
+func (mock *dbServiceMock) removeFileFragments(fileContainer fileContainerInterface) []error {
+	args := mock.Called(fileContainer)
 	return args.Get(0).([]error)
 }
 
@@ -39,7 +39,7 @@ func TestFileControler(t *testing.T) {
 		mockDbService := new(dbServiceMock)
 		mockFileFragment := &FileFragment{
 			FileName:        "test_file",
-			FragmentId:      0,
+			FragmentID:      0,
 			FragmentContent: []byte("something"),
 			TotalFragments:  2, // made it 2 so as not to assemble file
 		}
@@ -60,7 +60,7 @@ func TestFileControler(t *testing.T) {
 		mockDbService := new(dbServiceMock)
 		mockFileFragment := &FileFragment{
 			FileName:        "test_file",
-			FragmentId:      0,
+			FragmentID:      0,
 			FragmentContent: []byte("something"),
 			TotalFragments:  2, // made it 2 so as not to assemble file
 		}
@@ -79,7 +79,7 @@ func TestFileControler(t *testing.T) {
 		mockDbService := new(dbServiceMock)
 		mockFileFragment := &FileFragment{
 			FileName:        "test_file",
-			FragmentId:      0,
+			FragmentID:      0,
 			FragmentContent: []byte("something"),
 			TotalFragments:  2, // made it 2 so as not to assemble file
 		}
@@ -104,7 +104,7 @@ func TestFileControler(t *testing.T) {
 		mockDbService := new(dbServiceMock)
 		mockFileFragment := &FileFragment{
 			FileName:        "test_file",
-			FragmentId:      0,
+			FragmentID:      0,
 			FragmentContent: []byte("something"),
 			TotalFragments:  2, // made it 2 so as not to assemble file
 		}
@@ -122,7 +122,7 @@ func TestFileControler(t *testing.T) {
 		mockDbService := new(dbServiceMock)
 		mockFileFragment := &FileFragment{
 			FileName:        "test_file",
-			FragmentId:      0,
+			FragmentID:      0,
 			FragmentContent: []byte("something"),
 			TotalFragments:  2, // made it 2 so as not to assemble file
 		}

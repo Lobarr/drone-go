@@ -13,7 +13,8 @@ message Status {
 
 message FileFragment {
   string fileName = 1;
-  int32 fragmentId = 2;
+  int32 fragmentID = 2;
   bytes fragmentContent = 3;
   int32 totalFragments = 4;
+  string transactionID = 5;
 }
